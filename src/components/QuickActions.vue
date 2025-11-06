@@ -1,4 +1,3 @@
-<!-- Update: src/components/QuickActions.vue -->
 <template>
   <div class="quick-actions">
     <button class="action-btn" @click="$emit('add-account')">
@@ -37,7 +36,6 @@ defineEmits<{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 1rem;
-  margin-bottom: 2rem;
 }
 
 .action-btn {
@@ -54,6 +52,8 @@ defineEmits<{
   transition: var(--transition-fast);
   text-align: center;
   cursor: pointer;
+  border: none;
+  font-family: inherit;
 }
 
 .action-btn:hover {

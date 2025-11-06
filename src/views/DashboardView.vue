@@ -1,16 +1,14 @@
 <template>
   <div class="app-wrapper">
-    <!-- Header -->
     <AppHeader />
     
-    <!-- Main Content -->
     <main class="app-container">
       <!-- License Status Banner -->
       <div v-if="licenseStatus === 'expiring'" class="alert alert-warning mb-4">
         <div class="alert-content">
           <iconify-icon icon="mdi:alert-circle" />
           <span>Your license expires in {{ daysUntilExpiry }} days</span>
-          <button class="btn btn-sm btn-warning" @click="showPricingModal">
+          <button class="btn btn-sm btn-warning" @click="showLicenseModal = true">
             Renew Now
           </button>
         </div>
@@ -20,7 +18,7 @@
         <div class="alert-content">
           <iconify-icon icon="mdi:information" />
           <span>Your license expires in {{ daysUntilExpiry }} days</span>
-          <button class="btn btn-sm btn-primary" @click="showPricingModal">
+          <button class="btn btn-sm btn-primary" @click="showLicenseModal = true">
             Renew Early
           </button>
         </div>
@@ -35,7 +33,7 @@
           </h1>
           <div class="license-badge">
             {{ planName }} Plan • 
-            {{ accounts.length }}/{{ accountLimit }} Accounts •
+            {{ realAccounts.length }}/{{ accountLimit }} Accounts •
             {{ daysUntilExpiry }} days remaining
           </div>
         </div>
@@ -43,7 +41,7 @@
         <!-- Stats Grid -->
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-value">{{ accounts.length }}</div>
+            <div class="stat-value">{{ realAccounts.length }}</div>
             <div class="stat-label">Connected Accounts</div>
           </div>
           <div class="stat-card">
@@ -51,11 +49,11 @@
             <div class="stat-label">Platforms</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value">{{ teamMembers.length }}</div>
+            <div class="stat-value">{{ realTeamMembers.length }}</div>
             <div class="stat-label">Team Members</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value">{{ securityLogs.length }}</div>
+            <div class="stat-value">{{ securityEvents.length }}</div>
             <div class="stat-label">Security Events</div>
           </div>
         </div>
@@ -74,15 +72,15 @@
             <div class="card">
               <div class="card-header">
                 <span>Active Accounts</span>
-                <span class="badge bg-primary">{{ accounts.length }}</span>
+                <span class="badge bg-primary">{{ realAccounts.length }}</span>
               </div>
               <div class="card-body">
-                <div v-if="accounts.length === 0" class="empty-state">
+                <div v-if="realAccounts.length === 0" class="empty-state">
                   <iconify-icon icon="mdi:account-multiple-outline" />
                   <p>No accounts added yet</p>
-                  <router-link to="/accounts" class="btn btn-primary">
+                  <button class="btn btn-primary" @click="addAccount">
                     Add Your First Account
-                  </router-link>
+                  </button>
                 </div>
                 <div v-else>
                   <div class="accounts-list">
@@ -90,12 +88,16 @@
                       v-for="account in recentAccounts" 
                       :key="account.id"
                       :account="account"
+                      :current-token="accountTokens[account.id]?.token"
+                      :time-left="accountTokens[account.id]?.timeLeft"
+                      @copy-token="copyToken(account)"
+                      @remove="removeAccount(account.id)"
                     />
                   </div>
                   <div class="text-center mt-3">
-                    <router-link to="/accounts" class="btn btn-outline-primary">
+                    <button class="btn btn-outline-primary" @click="goToAccounts">
                       View All Accounts
-                    </router-link>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -113,11 +115,11 @@
             <div class="card">
               <div class="card-body">
                 <QuickActions 
-  @add-account="addAccount"
-  @bulk-import="bulkImport"
-  @export-data="exportData"
-  @settings="goToSettings"
-/>
+                  @add-account="addAccount"
+                  @bulk-import="showBulkImport"
+                  @export-data="exportAllData"
+                  @settings="goToSettings"
+                />
               </div>
             </div>
             
@@ -134,7 +136,7 @@
                   </div>
                   <div class="license-item">
                     <span class="license-label">Price:</span>
-                    <span class="license-value">${{ planPrice }}/month</span>
+                    <span class="license-value">{{ formattedPrice }}/month</span>
                   </div>
                   <div class="license-item">
                     <span class="license-label">Expires:</span>
@@ -151,7 +153,7 @@
                     </span>
                   </div>
                 </div>
-                <button class="btn btn-primary w-100 mt-3" @click="showPricingModal">
+                <button class="btn btn-primary w-100 mt-3" @click="showLicenseModal = true">
                   <iconify-icon icon="mdi:autorenew" />
                   Manage Subscription
                 </button>
@@ -173,10 +175,10 @@
             <div class="card">
               <div class="card-header">
                 <span>Active Team</span>
-                <span class="badge bg-primary">{{ teamMembers.length }}/{{ teamLimit }}</span>
+                <span class="badge bg-primary">{{ realTeamMembers.length }}/{{ teamLimit }}</span>
               </div>
               <div class="card-body">
-                <div v-if="teamMembers.length === 0" class="empty-state">
+                <div v-if="realTeamMembers.length === 0" class="empty-state">
                   <iconify-icon icon="mdi:account-group-outline" />
                   <p>No team members yet</p>
                   <button class="btn btn-primary" @click="inviteUser">
@@ -218,16 +220,16 @@
               </div>
               <div class="card-body">
                 <div class="security-events">
-                  <div v-for="log in recentSecurityLogs" :key="log.id" class="security-event">
+                  <div v-for="event in recentSecurityEvents" :key="event.id" class="security-event">
                     <div class="event-icon">
-                      <iconify-icon :icon="log.icon" />
+                      <iconify-icon :icon="event.icon" />
                     </div>
                     <div class="event-details">
-                      <div class="event-action">{{ log.action }}</div>
-                      <div class="event-meta">{{ log.user }} • {{ log.time }}</div>
+                      <div class="event-action">{{ event.action }}</div>
+                      <div class="event-meta">{{ event.user }} • {{ event.time }}</div>
                     </div>
-                    <div class="event-status" :class="log.status.toLowerCase()">
-                      <iconify-icon :icon="log.status === 'Success' ? 'mdi:check' : 'mdi:close'" />
+                    <div class="event-status" :class="event.status.toLowerCase()">
+                      <iconify-icon :icon="event.status === 'Success' ? 'mdi:check' : 'mdi:close'" />
                     </div>
                   </div>
                 </div>
@@ -241,31 +243,57 @@
           </div>
         </div>
       </div>
+            <BulkImportModal 
+        v-if="showBulkImportModal"
+        :show="showBulkImportModal"
+        @close="showBulkImportModal = false"
+        @import="handleBulkImport"
+      />
     </main>
+
+    <!-- License Modal -->
+    <LicenseModal 
+      v-if="showLicenseModal"
+      :show="showLicenseModal"
+      @update:show="showLicenseModal = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+// @ts-ignore
+import { RealTOTPEngine } from '@/engines/RealTOTPEngine'
+// @ts-ignore
+import { CurrencyService } from '@/engines/CurrencyService'
 import AppHeader from '@/components/AppHeader.vue'
 import QuickActions from '@/components/QuickActions.vue'
 import AccountCard from '@/components/AccountCard.vue'
+import LicenseModal from '@/components/LicenseModal.vue'
+import BulkImportModal from '@/components/BulkImportModal.vue' 
 
 const authStore = useAuthStore()
 const router = useRouter()
 
-// Mock data - replace with real data from your stores
-const accounts = ref([])
-const teamMembers = ref([])
-const securityLogs = ref([])
+// Engines
+const totpEngine = new RealTOTPEngine()
+const currencyService = new CurrencyService()
+
+// State
+const showLicenseModal = ref(false)
+const showBulkImportModal = ref(false)
+const realAccounts = ref<any[]>([])
+const realTeamMembers = ref<any[]>([])
+const securityEvents = ref<any[]>([])
+const accountTokens = ref<Record<string, { token: string; timeLeft: number }>>({})
 
 // Computed properties
-const recentAccounts = computed(() => accounts.value.slice(0, 5))
-const recentTeamMembers = computed(() => teamMembers.value.slice(0, 4))
-const recentSecurityLogs = computed(() => securityLogs.value.slice(0, 5))
-const platformCount = computed(() => new Set(accounts.value.map((a: any) => a.platform)).size)
+const recentAccounts = computed(() => realAccounts.value.slice(0, 5))
+const recentTeamMembers = computed(() => realTeamMembers.value.slice(0, 4))
+const recentSecurityEvents = computed(() => securityEvents.value.slice(0, 5))
+const platformCount = computed(() => new Set(realAccounts.value.map(a => a.platform)).size)
 
 // License info from auth store
 const accountLimit = computed(() => authStore.getAccountLimit?.() || 10)
@@ -273,11 +301,15 @@ const teamLimit = computed(() => authStore.getTeamLimit?.() || 5)
 const daysUntilExpiry = computed(() => authStore.getDaysUntilExpiry?.() || 30)
 const licenseStatus = computed(() => authStore.getLicenseStatus?.() || 'active')
 const planName = computed(() => authStore.getPlanName?.(authStore.licenseData?.plan) || 'Professional')
-const planPrice = computed(() => authStore.getPlanPrice?.(authStore.licenseData?.plan) || 15.99)
+const planPrice = computed(() => authStore.getPlanPrice?.(authStore.licenseData?.plan) || 25.99)
 
 const formattedStatus = computed(() => 
   licenseStatus.value.charAt(0).toUpperCase() + licenseStatus.value.slice(1)
 )
+
+const formattedPrice = computed(() => {
+  return currencyService.formatPrice(planPrice.value, 'USD')
+})
 
 const statusBadgeClass = computed(() => {
   switch (licenseStatus.value) {
@@ -288,29 +320,57 @@ const statusBadgeClass = computed(() => {
   }
 })
 
-// Methods for QuickActions events
+// ============ METHODS - REMOVED DUPLICATES ============
 const addAccount = () => {
   router.push('/accounts')
 }
 
-const bulkImport = () => {
-  // This will trigger the bulk import modal in AccountsView
-  router.push('/accounts')
-  // You might want to add a flag to auto-open the modal
-  // or implement the modal directly in Dashboard
+const showBulkImport = () => {
+  showBulkImportModal.value = true // OPEN MODAL DIRECTLY
 }
 
-const exportData = () => {
-  // Implement export functionality
-  alert('Export functionality would be implemented here')
+const handleBulkImport = (importedAccounts: any[]) => {
+  // Add imported accounts to realAccounts
+  importedAccounts.forEach(account => {
+    if (!realAccounts.value.find(a => a.id === account.id)) {
+      realAccounts.value.push(account)
+    }
+  })
+  
+  // Add security event
+  addSecurityEvent(`Bulk imported ${importedAccounts.length} accounts`, 'User', 'Success')
+  
+  // Show success message
+  alert(`Successfully imported ${importedAccounts.length} accounts!`)
+}
+
+const exportAllData = () => {
+  const data = {
+    accounts: realAccounts.value,
+    teamMembers: realTeamMembers.value,
+    securityEvents: securityEvents.value,
+    license: authStore.licenseData,
+    exportedAt: new Date().toISOString()
+  }
+  
+  const dataStr = JSON.stringify(data, null, 2)
+  const blob = new Blob([dataStr], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `authflow-export-${new Date().toISOString().split('T')[0]}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+  
+  addSecurityEvent('Data exported', 'System', 'Success')
 }
 
 const goToSettings = () => {
   router.push('/settings')
 }
 
-const showPricingModal = () => {
-  alert('Pricing modal would open here')
+const goToAccounts = () => {
+  router.push('/accounts')
 }
 
 const inviteUser = () => {
@@ -325,30 +385,110 @@ const viewAllLogs = () => {
   router.push('/security-logs')
 }
 
-const logout = () => {
-  authStore.logout()
-  router.push('/')
+const copyToken = async (account: any) => {
+  const token = accountTokens.value[account.id]?.token
+  if (token) {
+    try {
+      await navigator.clipboard.writeText(token.replace(/\s/g, ''))
+      addSecurityEvent(`Token copied for ${account.name}`, 'User', 'Success')
+      // You could add a toast notification here
+    } catch (error) {
+      console.error('Failed to copy token:', error)
+    }
+  }
 }
 
-// Load data on mount
+const removeAccount = (accountId: string) => {
+  const account = realAccounts.value.find(a => a.id === accountId)
+  if (account && confirm(`Are you sure you want to remove ${account.name}?`)) {
+    totpEngine.removeAccount(accountId)
+    realAccounts.value = realAccounts.value.filter(a => a.id !== accountId)
+    addSecurityEvent(`Account removed: ${account.name}`, 'User', 'Success')
+  }
+}
+
+const addSecurityEvent = (action: string, user: string, status: string) => {
+  const event = {
+    id: Date.now(),
+    action,
+    user,
+    status,
+    time: new Date().toLocaleTimeString(),
+    icon: getEventIcon(action),
+    timestamp: new Date()
+  }
+  securityEvents.value.unshift(event)
+  
+  // Keep only last 50 events
+  if (securityEvents.value.length > 50) {
+    securityEvents.value = securityEvents.value.slice(0, 50)
+  }
+}
+
+const getEventIcon = (action: string) => {
+  if (action.includes('added')) return 'mdi:account-plus'
+  if (action.includes('removed')) return 'mdi:account-remove'
+  if (action.includes('Token')) return 'mdi:key'
+  if (action.includes('exported')) return 'mdi:export'
+  return 'mdi:information'
+}
+
+// Real-time TOTP updates
+const handleTokenUpdate = (event: CustomEvent) => {
+  const { accountId, token, timeLeft } = event.detail
+  accountTokens.value[accountId] = { token, timeLeft }
+}
+
+// Load real data
+const loadRealData = () => {
+  // Load accounts from TOTP engine
+  realAccounts.value = totpEngine.getAllAccounts()
+  
+  // Load team members from localStorage or API
+  const savedTeam = localStorage.getItem('authflow-team-members')
+  if (savedTeam) {
+    realTeamMembers.value = JSON.parse(savedTeam)
+  } else {
+    // Default team members
+    realTeamMembers.value = [
+      { id: 1, name: 'Admin User', role: 'Administrator', initials: 'AU', status: 'online' }
+    ]
+  }
+  
+  // Load security events
+  const savedEvents = localStorage.getItem('authflow-security-events')
+  if (savedEvents) {
+    securityEvents.value = JSON.parse(savedEvents)
+  } else {
+    // Default security events
+    securityEvents.value = [
+      { 
+        id: 1, 
+        action: 'Application started', 
+        user: 'System', 
+        time: new Date().toLocaleTimeString(), 
+        status: 'Success', 
+        icon: 'mdi:power',
+        timestamp: new Date()
+      }
+    ]
+  }
+}
+
+// Lifecycle
 onMounted(() => {
-  // Load mock data - replace with actual API calls
-  accounts.value = [
-    { id: 1, name: 'Google Account', platform: 'google', type: 'TOTP', lastUsed: new Date() },
-    { id: 2, name: 'GitHub', platform: 'github', type: 'TOTP', lastUsed: new Date() },
-    { id: 3, name: 'Twitter', platform: 'twitter', type: 'TOTP', lastUsed: new Date() }
-  ]
+  loadRealData()
   
-  teamMembers.value = [
-    { id: 1, name: 'John Doe', role: 'Admin', initials: 'JD', status: 'online' },
-    { id: 2, name: 'Jane Smith', role: 'User', initials: 'JS', status: 'offline' }
-  ]
+  // Listen for real-time token updates
+  window.addEventListener('realTokenUpdate', handleTokenUpdate as EventListener)
   
-  securityLogs.value = [
-    { id: 1, action: 'Account added', user: 'John Doe', time: '2 hours ago', status: 'Success', icon: 'mdi:account-plus' },
-    { id: 2, action: 'Login attempt', user: 'Jane Smith', time: '5 hours ago', status: 'Success', icon: 'mdi:login' },
-    { id: 3, action: 'Token generated', user: 'System', time: '1 day ago', status: 'Success', icon: 'mdi:key' }
-  ]
+  // Set visible accounts for performance
+  const accountIds = realAccounts.value.map(a => a.id)
+  totpEngine.setVisibleAccounts(accountIds)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('realTokenUpdate', handleTokenUpdate as EventListener)
 })
 </script>
 

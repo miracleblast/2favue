@@ -47,12 +47,14 @@ import { computed } from 'vue'
 import { getPlatformIcon, getPlatformColor } from '@/utils/platformIcons'
 
 interface Account {
+  id: string
   type: string
   platform: string
   name: string
   username?: string
   issuer?: string
   group?: string
+  secret?: string
 }
 
 interface Props {
@@ -62,11 +64,16 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-defineEmits(['copy-token', 'remove'])
+defineEmits<{
+  'copy-token': [account: Account]
+  'remove': [accountId: string]
+}>()
 
 const platformIcon = computed(() => getPlatformIcon(props.account.platform))
 const platformColor = computed(() => getPlatformColor(props.account.platform))
 </script>
+
+<!-- Template and styles remain the same -->
 
 <style scoped>
 .account-card {

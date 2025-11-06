@@ -30,7 +30,8 @@ export const useAuthStore = defineStore('auth', () => {
     getDaysUntilExpiry,
     hasFeature,
     getPlanName,
-    getPlanPrice
+    getPlanPrice,
+    getTeamLimit // ADD THIS MISSING METHOD
   } = useLicense()
 
   return {
@@ -45,6 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
     
     // Getters
     getAccountLimit,
+    getTeamLimit, // ADD THIS
     getLicenseStatus,
     getDaysUntilExpiry,
     hasFeature,

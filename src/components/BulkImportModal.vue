@@ -1,6 +1,6 @@
 <template>
-  <div v-if="show" class="modal-overlay" @click.self="close">
-    <div class="modal-content xl">
+  <div v-if="show" class="modal-overlay bulk-import-overlay" @click.self="close">
+    <div class="modal-content xl bulk-import-modal">
       <div class="modal-header">
         <h3>Bulk Import Accounts</h3>
         <button class="close-btn" @click="close">
@@ -301,6 +301,90 @@ const close = () => {
 </script>
 
 <style scoped>
+/* ============ FIXED BACKGROUND ============ */
+.bulk-import-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85) !important; /* SOLID DARK BACKGROUND */
+  backdrop-filter: blur(10px) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+}
+
+.bulk-import-modal {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  max-width: 600px !important;
+  width: 100% !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  position: relative !important;
+}
+
+/* Modal Header - Enhanced */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.03);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.03);
+  position: sticky;
+  bottom: 0;
+}
+
 /* Progress Bar Styles */
 .progress-section {
   margin: 1.5rem 0;
@@ -386,6 +470,7 @@ const close = () => {
   transition: var(--transition-fast);
   margin-bottom: 1.5rem;
   cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .file-upload-area.dragover {
@@ -497,12 +582,46 @@ const close = () => {
   margin-top: 0.5rem;
 }
 
-/* Modal Specific */
-.modal-content.xl {
-  max-width: 600px;
+/* Button Variants */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition-fast);
 }
 
-/* Button Variants */
+.btn-primary {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 .btn-outline-primary {
   background: transparent;
   border: 1px solid var(--accent-primary);
@@ -547,6 +666,10 @@ const close = () => {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .bulk-import-overlay {
+    padding: 1rem;
+  }
+  
   .import-options {
     grid-template-columns: 1fr;
   }
@@ -570,9 +693,10 @@ const close = () => {
     text-align: center;
   }
   
-  .modal-content.xl {
-    margin: 1rem;
-    max-width: calc(100% - 2rem);
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 1.5rem;
   }
 }
 
@@ -597,47 +721,12 @@ const close = () => {
   .summary-item strong {
     font-size: 1.25rem;
   }
-}
-
-/* Dark mode enhancements */
-@media (prefers-color-scheme: dark) {
-  .file-upload-area.dragover {
-    background: rgba(59, 130, 246, 0.1);
-  }
   
-  .option-card.active {
-    background: rgba(59, 130, 246, 0.15);
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 1rem;
   }
-  
-  .code-preview {
-    background: rgba(0, 0, 0, 0.5);
-  }
-}
-
-/* Accessibility improvements */
-.option-card:focus {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 2px;
-}
-
-.file-upload-area:focus {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 2px;
-}
-
-/* Loading states */
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-/* Smooth transitions for all interactive elements */
-.option-card,
-.file-upload-area,
-.btn,
-.btn-icon {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Scrollbar styling for code preview and failed list */
@@ -661,5 +750,24 @@ const close = () => {
 .code-preview::-webkit-scrollbar-thumb:hover,
 .failed-list::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
+}
+
+/* Accessibility improvements */
+.option-card:focus {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.file-upload-area:focus {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Smooth transitions for all interactive elements */
+.option-card,
+.file-upload-area,
+.btn,
+.btn-icon {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>
