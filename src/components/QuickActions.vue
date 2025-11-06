@@ -1,3 +1,4 @@
+<!-- Update: src/components/QuickActions.vue -->
 <template>
   <div class="quick-actions">
     <button class="action-btn" @click="$emit('add-account')">
@@ -6,12 +7,12 @@
     </button>
     
     <button class="action-btn" @click="$emit('bulk-import')">
-      <iconify-icon icon="mdi:upload" />
+      <iconify-icon icon="mdi:import" />
       <span>Bulk Import</span>
     </button>
     
     <button class="action-btn" @click="$emit('export-data')">
-      <iconify-icon icon="mdi:download" />
+      <iconify-icon icon="mdi:export" />
       <span>Export Data</span>
     </button>
     
@@ -22,15 +23,21 @@
   </div>
 </template>
 
-<script setup>
-defineEmits(['add-account', 'bulk-import', 'export-data', 'settings'])
+<script setup lang="ts">
+defineEmits<{
+  'add-account': []
+  'bulk-import': []
+  'export-data': []
+  'settings': []
+}>()
 </script>
 
 <style scoped>
 .quick-actions {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .action-btn {
@@ -39,36 +46,24 @@ defineEmits(['add-account', 'bulk-import', 'export-data', 'settings'])
   align-items: center;
   gap: 0.5rem;
   padding: 1.5rem 1rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  text-decoration: none;
   color: var(--text-primary);
-  transition: all 0.3s ease;
+  transition: var(--transition-fast);
+  text-align: center;
   cursor: pointer;
-  border: none;
-  width: 100%;
 }
 
 .action-btn:hover {
-  border-color: var(--accent-primary);
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(99, 196, 241, 0.15);
+  border-color: rgba(99, 196, 241, 0.4);
   transform: translateY(-2px);
 }
 
 .action-btn iconify-icon {
   font-size: 1.5rem;
   color: var(--accent-primary);
-}
-
-.action-btn span {
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-align: center;
-}
-
-@media (min-width: 768px) {
-  .quick-actions {
-    grid-template-columns: repeat(4, 1fr);
-  }
 }
 </style>

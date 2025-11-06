@@ -1,80 +1,47 @@
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+// @ts-ignore
 import { RealTOTPEngine } from '@/engines/RealTOTPEngine'
 
-interface Account {
-  id: string
-  name: string
-  secret: string
-  issuer: string
-  type: string
-  group: string
-  currentToken?: string
-  timeLeft?: number
-  tokenValid?: boolean
-}
-
-export const useTOTP = () => {
+export function useTOTP() {
+  const accounts = ref<any[]>([])
   const totpEngine = new RealTOTPEngine()
-  const accounts = ref<Account[]>([])
-  const visibleAccounts = ref(new Set<string>())
 
-  const generateTOTP = (secret: string, window: number = 0): string => {
-    return totpEngine.generateTOTP(secret, window)
-  }
-
-  const addAccount = (accountData: Omit<Account, 'id'> & { id?: string }): Account => {
-    const account = totpEngine.addAccount(
-      accountData.id || `acc_${Date.now()}`,
-      accountData.name, 
-      accountData.secret,
-      accountData.issuer,
-      accountData.type,
-      accountData.group
-    ) as Account
-    accounts.value.push(account)
+  const addAccount = async (
+    accountId: string, 
+    name: string, 
+    secret: string, 
+    issuer: string = 'Unknown', 
+    type: string = 'TOTP', 
+    group: string = 'default'
+  ) => {
+    const account = totpEngine.addAccount(accountId, name, secret, issuer, type, group)
+    accounts.value = totpEngine.getAllAccounts()
     return account
   }
 
-  const removeAccount = (accountId: string): void => {
+  const removeAccount = async (accountId: string) => {
     totpEngine.removeAccount(accountId)
-    accounts.value = accounts.value.filter(acc => acc.id !== accountId)
+    accounts.value = totpEngine.getAllAccounts()
   }
 
-  const getAllAccounts = (): Account[] => {
-    return totpEngine.getAllAccounts() as Account[]
+  const generateTOTP = (secret: string) => {
+    return totpEngine.generateTOTP(secret)
   }
 
-  const validateToken = (secret: string, token: string, window: number = 1): boolean => {
-    return totpEngine.validateToken(secret, token, window)
+  const setupTokenUpdates = () => {
+    // Token updates are handled by the RealTOTPEngine via events
   }
 
-  // Real-time token updates
-  const setupTokenUpdates = (): void => {
-    const handleTokenUpdate = (event: CustomEvent) => {
-      const { accountId, token, timeLeft, valid } = event.detail
-      // Update Vue reactive system
-      const accountIndex = accounts.value.findIndex(acc => acc.id === accountId)
-      if (accountIndex !== -1) {
-        accounts.value[accountIndex].currentToken = token
-        accounts.value[accountIndex].timeLeft = timeLeft
-        accounts.value[accountIndex].tokenValid = valid
-      }
-    }
-
-    window.addEventListener('realTokenUpdate', handleTokenUpdate as EventListener)
-    
-    onUnmounted(() => {
-      window.removeEventListener('realTokenUpdate', handleTokenUpdate as EventListener)
-    })
-  }
+  // Load accounts on mount
+  onMounted(() => {
+    accounts.value = totpEngine.getAllAccounts()
+  })
 
   return {
-    accounts: computed(() => accounts.value),
-    generateTOTP,
+    accounts,
     addAccount,
     removeAccount,
-    getAllAccounts,
-    validateToken,
+    generateTOTP,
     setupTokenUpdates
   }
 }
