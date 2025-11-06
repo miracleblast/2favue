@@ -28,23 +28,23 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
-  path: '/api-keys',
-  name: 'api-keys',
-  component: () => import('@/views/ApiKeysView.vue'),
-  meta: { requiresAuth: true }
-},
-{
-  path: '/security-logs',
-  name: 'security-logs',
-  component: () => import('@/views/SecurityLogsView.vue'),
-  meta: { requiresAuth: true }
-},
-{
-  path: '/settings',
-  name: 'settings',
-  component: () => import('@/views/SettingsView.vue'),
-  meta: { requiresAuth: true }
-},
+    path: '/api-keys',
+    name: 'api-keys',
+    component: () => import('@/views/ApiKeysView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/security-logs',
+    name: 'security-logs',
+    component: () => import('@/views/SecurityLogsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: () => import('@/views/SettingsView.vue'),
+    meta: { requiresAuth: true }
+  },
   // Fix catch-all route with proper typing
   {
     path: '/:pathMatch(.*)*',
@@ -61,13 +61,13 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   
   if (to.meta.requiresAuth) {
-    if (authStore.isAuthenticated || authStore.checkExistingLicense()) {
+    if (authStore.isAuthenticated || authStore.licenseData) {
       next()
     } else {
       next('/')
     }
   } else {
-    if (to.name === 'license' && (authStore.isAuthenticated || authStore.checkExistingLicense())) {
+    if (to.name === 'license' && (authStore.isAuthenticated || authStore.licenseData)) {
       next('/dashboard')
     } else {
       next()

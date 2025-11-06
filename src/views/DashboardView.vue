@@ -288,7 +288,27 @@ const statusBadgeClass = computed(() => {
   }
 })
 
-// Methods
+// Methods for QuickActions events
+const addAccount = () => {
+  router.push('/accounts')
+}
+
+const bulkImport = () => {
+  // This will trigger the bulk import modal in AccountsView
+  router.push('/accounts')
+  // You might want to add a flag to auto-open the modal
+  // or implement the modal directly in Dashboard
+}
+
+const exportData = () => {
+  // Implement export functionality
+  alert('Export functionality would be implemented here')
+}
+
+const goToSettings = () => {
+  router.push('/settings')
+}
+
 const showPricingModal = () => {
   alert('Pricing modal would open here')
 }

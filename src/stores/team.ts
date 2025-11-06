@@ -16,9 +16,9 @@ export const useTeamStore = defineStore('team', () => {
   const teamMembers = ref<TeamMember[]>([
     {
       id: '1',
-      name: 'John Doe',
-      email: 'john@agency.com',
-      initials: 'JD',
+      name: 'Oscar Makeba',
+      email: 'omakeba@agency.com',
+      initials: 'OM',
       role: 'admin',
       status: 'online',
       lastActive: '2 minutes ago',
@@ -26,9 +26,9 @@ export const useTeamStore = defineStore('team', () => {
     },
     {
       id: '2',
-      name: 'Sarah Wilson',
-      email: 'sarah@agency.com',
-      initials: 'SW',
+      name: 'Jasmine Al-Raima',
+      email: 'jalraima@agency.com',
+      initials: 'JA',
       role: 'manager',
       status: 'offline',
       lastActive: '1 hour ago',

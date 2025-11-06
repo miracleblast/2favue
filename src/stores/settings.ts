@@ -21,16 +21,31 @@ export interface AccountSettings {
   email: string
   company: string
   timezone: string
+  language: string
+}
+
+export interface SecuritySettings {
+  sessionTimeout: string
+  loginNotifications: boolean
+  autoLock: boolean
+  clipboardAutoClear: boolean
+}
+
+export interface NotificationSettings {
+  pushNotifications: boolean
+  lowTokenTime: boolean
+  teamActivity: boolean
+  licenseAlerts: boolean
 }
 
 export const useSettingsStore = defineStore('settings', () => {
   const license = ref<LicenseInfo>({
     plan: 'Professional',
-    price: 29,
+    price: 25.99,
     status: 'active',
-    daysUntilExpiry: 45,
-    accountLimit: 50,
-    teamLimit: 10,
+    daysUntilExpiry: 30,
+    accountLimit: 1000,
+    teamLimit: 50,
     features: {
       apiAccess: true,
       prioritySupport: true,
@@ -40,18 +55,47 @@ export const useSettingsStore = defineStore('settings', () => {
   })
 
   const accountSettings = ref<AccountSettings>({
-    name: 'John Doe',
-    email: 'john@agency.com',
+    name: 'Oscar Makeba',
+    email: 'your@agency.com',
     company: 'Digital Marketing Agency',
-    timezone: 'UTC-5'
+    timezone: 'UTC-5',
+    language: 'en'
+  })
+
+  const securitySettings = ref<SecuritySettings>({
+    sessionTimeout: '60',
+    loginNotifications: true,
+    autoLock: true,
+    clipboardAutoClear: true
+  })
+
+  const notificationSettings = ref<NotificationSettings>({
+    pushNotifications: true,
+    lowTokenTime: true,
+    teamActivity: false,
+    licenseAlerts: true
   })
 
   const loadSettings = async () => {
     // Simulate API call with real delay
     await new Promise(resolve => setTimeout(resolve, 600))
+    
+    // Load from localStorage for security and notifications
+    const savedSecurity = localStorage.getItem('authflow-security-settings')
+    const savedNotifications = localStorage.getItem('authflow-notification-settings')
+    
+    if (savedSecurity) {
+      securitySettings.value = { ...securitySettings.value, ...JSON.parse(savedSecurity) }
+    }
+    if (savedNotifications) {
+      notificationSettings.value = { ...notificationSettings.value, ...JSON.parse(savedNotifications) }
+    }
+    
     return {
       license: license.value,
-      accountSettings: accountSettings.value
+      accountSettings: accountSettings.value,
+      securitySettings: securitySettings.value,
+      notificationSettings: notificationSettings.value
     }
   }
 
@@ -60,6 +104,22 @@ export const useSettingsStore = defineStore('settings', () => {
     await new Promise(resolve => setTimeout(resolve, 800))
     accountSettings.value = newSettings
     return accountSettings.value
+  }
+
+  const updateSecuritySettings = async (newSettings: SecuritySettings) => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500))
+    securitySettings.value = newSettings
+    localStorage.setItem('authflow-security-settings', JSON.stringify(securitySettings.value))
+    return securitySettings.value
+  }
+
+  const updateNotificationSettings = async (newSettings: NotificationSettings) => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500))
+    notificationSettings.value = newSettings
+    localStorage.setItem('authflow-notification-settings', JSON.stringify(notificationSettings.value))
+    return notificationSettings.value
   }
 
   const updateLicense = async (newLicense: Partial<LicenseInfo>) => {
@@ -88,8 +148,12 @@ export const useSettingsStore = defineStore('settings', () => {
   return {
     license,
     accountSettings,
+    securitySettings,
+    notificationSettings,
     loadSettings,
     updateAccountSettings,
+    updateSecuritySettings,
+    updateNotificationSettings,
     updateLicense,
     checkLicenseStatus
   }

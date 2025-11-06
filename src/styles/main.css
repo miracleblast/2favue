@@ -470,3 +470,23 @@ p {
     padding-bottom: 140px;
   }
 }
+/* Fix for CSS parsing errors */
+.dashboard {
+  width: 100%; /* Remove any invalid width values */
+}
+
+.users {
+  width: 100%; /* Remove any invalid width values */
+}
+
+/* Ensure all width values are valid */
+[class*="width-"] {
+  width: auto; /* Fallback for invalid width values */
+}
+
+/* Fix for any invalid CSS declarations */
+* {
+  box-sizing: border-box;
+}
+
+/* Remove any duplicate or invalid rules */

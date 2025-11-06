@@ -135,10 +135,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useSecurityLogsStore } from '@/stores/securityLogs'
+// @ts-ignore
+import { NotificationService } from '@/engines/NotificationService'
 import AppHeader from '@/components/AppHeader.vue'
 
 // Store
 const securityLogsStore = useSecurityLogsStore()
+
+// Engine
+const notificationService = new NotificationService()
 
 // Reactive State
 const securityLogs = computed(() => securityLogsStore.securityLogs)
@@ -174,20 +179,88 @@ const exportLogs = () => {
   a.download = `security-logs-${new Date().toISOString().split('T')[0]}.json`
   a.click()
   URL.revokeObjectURL(url)
+  
+  // Log this action
+  logSecurityEvent('logs_exported', 'Security logs exported', 'Success')
   alert('Security logs exported successfully!')
 }
 
 const clearLogs = () => {
   if (confirm('Are you sure you want to clear all security logs? This action cannot be undone.')) {
     securityLogsStore.clearLogs()
+    
+    // Log this action
+    logSecurityEvent('logs_cleared', 'Security logs cleared', 'Success')
     alert('Security logs cleared successfully!')
   }
 }
 
+const logSecurityEvent = (type: string, details: string, status: string) => {
+  const event = {
+    time: new Date().toLocaleTimeString(),
+    date: new Date().toLocaleDateString(),
+    user: 'You',
+    userInitials: 'Y',
+    action: getActionFromType(type),
+    details,
+    ip: getClientIP(),
+    platform: getPlatformInfo(),
+    status
+  };
+  
+  securityLogsStore.addLog(event);
+  
+  // Send real notification
+  if (notificationService.canNotify()) {
+    notificationService.notifySecurityEvent({
+      type,
+      user: 'You',
+      ip: event.ip,
+      platform: event.platform,
+      status
+    });
+  }
+}
+
+const getActionFromType = (type: string) => {
+  const actions: Record<string, string> = {
+    'logs_exported': 'Exported Security Logs',
+    'logs_cleared': 'Cleared Security Logs',
+    'login': 'User Login',
+    'logout': 'User Logout',
+    'token_generated': 'Token Generated',
+    'account_added': 'Account Added',
+    'account_removed': 'Account Removed'
+  };
+  return actions[type] || 'Security Event';
+}
+
+const getClientIP = () => {
+  // In a real app, you'd get this from your backend
+  // For demo, generate a random IP
+  return `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+}
+
+const getPlatformInfo = () => {
+  const userAgent = navigator.userAgent;
+  
+  if (userAgent.includes('Mac')) return 'macOS';
+  if (userAgent.includes('Win')) return 'Windows';
+  if (userAgent.includes('Linux')) return 'Linux';
+  if (userAgent.includes('Android')) return 'Android';
+  if (userAgent.includes('iPhone') || userAgent.includes('iPad')) return 'iOS';
+  
+  return 'Web Browser';
+}
+
 // Lifecycle
 onMounted(() => {
-  securityLogsStore.loadSecurityLogs()
-})
+  securityLogsStore.loadSecurityLogs();
+  notificationService.init();
+  
+  // Log page view
+  logSecurityEvent('page_view', 'Viewed security logs', 'Success');
+});
 </script>
 
 <style scoped>
